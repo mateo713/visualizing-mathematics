@@ -62,7 +62,7 @@ def main():
     ax = accuracyAxes[0]
     ax.plot(listn, listdist)
     for x, y in zip(listn, listdist):
-        ax.text(x, y, f"{str(y)[:7]}")
+        ax.text(x, y, f"{max(str(y)[:7], str(int(y)), key = len)}")
     ax.grid(True)
     ax.set_title(titles[0])
 
@@ -74,7 +74,7 @@ def main():
     ax.set_yscale("symlog")
     ax.set_ylim(good_ylim(listdist, ax.get_ylim()))
     for x, y in zip(listn, listdist):
-        ax.text(x, y, f"{str(y)[:7]}")
+        ax.text(x, y, f"{max(str(y)[:7], str(int(y)), key = len)}")
     ax.set_title(titles[1])
     ax.grid(True, which='major')
 
