@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 from scipy.integrate import quad
 from math import *  #lets the user enter complicated functions easily, eg: exp(3*sin(x**2))
 
@@ -21,7 +20,7 @@ def good_ylim(values, default):  # log scale can give ugly ticks for y values. T
 def main():
     formula = input("f(x) = ")
     f = lambda x: eval(formula)
-    xmin, xmax = eval(input("Interval of integration, [xmin, xmax] = "))
+    xmin, xmax = eval(input("Interval of integration, (xmin, xmax) = "))
     boolLogX = input("Logarithmic x scale for graphing f(x) ? [y/n]").lower() == 'y'
     boolLogY = input("Logarithmic y scale for graphing f(x) ? [y/n]").lower() == 'y'
 
@@ -33,13 +32,16 @@ def main():
     *listListy, continuous_y = (np.fromiter(map(f, listx), dtype=float) for listx in (listListx + [continuous_x]))
 
     fig = plt.gcf()
-    fig.suptitle(f"Study of the function y = {formula} on the interval [{xmin}, {xmax}] and of the error compared to the exact value")
+    fig.suptitle(f"Study of the function y = {formula} on the interval ({xmin}, {xmax}) and of the error compared to the exact value")
 
     areaAxes = (fig.add_subplot(len(listn), 2, i) for i in range(1, 2 * (len(listn)) + 1, 2))
 
     for ax, listx, listy in zip(areaAxes, listListx, listListy):
         ax.plot(continuous_x, continuous_y)
-        ax.bar(listx, listy, align='edge', width=(listx[-1] - listx[0]) / (len(listx) - 1), alpha=0.5)
+        ax.bar(listx, listy, align='edge',
+               width=(listx[-1] - listx[0]) / (len(listx) - 1),
+               color=list("#70db70" if y >= 0 else "#ff6666" for y in listy),
+               alpha=0.5)
         if boolLogX: ax.set_xscale('log')
         if boolLogY: ax.set_yscale('log')
         ax.set_title(f"Visualization of the Riemann sum with {len(listx)} rectangles")
@@ -59,6 +61,8 @@ def main():
 
     ax = accuracyAxes[0]
     ax.plot(listn, listdist)
+    for x, y in zip(listn, listdist):
+        ax.text(x, y, f"{str(y)[:7]}")
     ax.grid(True)
     ax.set_title(titles[0])
 
@@ -69,9 +73,8 @@ def main():
     ax.get_xaxis().set_tick_params(which='minor', width=0)
     ax.set_yscale("symlog")
     ax.set_ylim(good_ylim(listdist, ax.get_ylim()))
-    #ax.yaxis.set_minor_locator(ticker.LogLocator(subs=(1.0, 2.0, 3.0, 6.0)))
-    #ax.yaxis.set_minor_formatter(ticker.LogFormatter(labelOnlyBase=False))
-    # TODO: make appear the minor ticks on the y axis
+    for x, y in zip(listn, listdist):
+        ax.text(x, y, f"{str(y)[:7]}")
     ax.set_title(titles[1])
     ax.grid(True, which='major')
 
