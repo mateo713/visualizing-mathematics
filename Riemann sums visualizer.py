@@ -2,32 +2,33 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.integrate import quad
 from math import *  #lets the user enter complicated functions easily, eg: exp(3*sin(x**2))
+import pyinputplus as pyip # makes taking inputs more convenient for the user
 
 # prevents a warning for calling ax.set_yscale("symlog", linthresh=1e-30) with linthresh where it is.
 import warnings
-warnings.filterwarnings("ignore",category=__import__('matplotlib').cbook.mplDeprecation)
+warnings.filterwarnings("ignore", category=__import__('matplotlib').cbook.mplDeprecation)
 
 
-
-def good_ylim(ax, values):  # log scale can give ugly limits for y values. This fixes that with a 0 and a power of 10 times a digit, like 9e-2.
+def good_ylim(ax, values):  # symlog scale can give ugly limits for y values. This fixes that with a 0 and a power of 10 times a digit, like 9e-2.
     mini, maxi = min(values), max(values)
     newBottom, newTop = ax.get_ylim()
-    if mini < maxi <= 0 :
+    if mini < 0 < maxi:
+        newBottom = -(int(str(-mini / 10 ** floor(log10(-mini)))[0]) + 1) * 10 ** floor(log10(-mini))
+        newTop = (int(str(maxi / 10 ** floor(log10(maxi)))[0]) + 1) * 10 ** floor(log10(maxi))
+        ax.yticks(list(ax.yticks()[0]) + [0])  # adds 0 to the major ticks, as it is not always there by default, doesn't seem to work though
+    elif mini < maxi <= 0 :
         newBottom = -(int(str(-mini / 10 ** floor(log10(-mini)))[0]) + 1) * 10 ** floor(log10(-mini))
         newTop = 0
-    elif maxi > mini >= 0:
+    elif 0 <= mini < maxi:
         newBottom = 0
-        newTop = (int(str(maxi / 10 ** floor(log10(maxi)))[0]) + 1) * 10 ** floor(log10(maxi))
-    elif mini < 0 < maxi:
-        newBottom = -(int(str(-mini / 10 ** floor(log10(-mini)))[0]) + 1) * 10 ** floor(log10(-mini))
         newTop = (int(str(maxi / 10 ** floor(log10(maxi)))[0]) + 1) * 10 ** floor(log10(maxi))
     ax.set_ylim(newBottom, newTop)
 
 
-def niceStr(val):   #gives a nice value, avoids having far too many decimals display.
-    if abs(val) > 100:
-        return str(round(val, max(0, 6 - floor(log10(val)))))
-    #if it is in scientific notation, keep the scientific notation
+def niceStr(val):   #gives a nice value, avoids having far too many digits display.
+    if 100 < abs(val) < 1000000:   #just take away a few decimal digits
+        return str(round(val, max(0, 6 - floor(log10(abs(val))))))
+    #if it is in scientific notation, keep the scientific notation, just reduce the number of digits
     string = str(val)
     end = string.find('e')
     if end != -1:
@@ -47,7 +48,7 @@ def graphAccuracy(axes, list_n, exact, errorBound, listDist):
         titles = ("difference for each approximation compared to the exact value of the integral, 0",
                   "difference for each approximation compared to the exact value of the integral, 0, on a logarithmic scale")
     else:
-        listDist *= 100 / exact
+        listDist =  listDist * (100 / exact)
         titles = (f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}",
                   f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
 
@@ -157,23 +158,24 @@ def trapezoidal(fig, f, formula, xmin, xmax, boolLogX, boolLogY, list_n, lenCont
 
 
 def main():
-    fig = plt.gcf()
     formula = input("f(x) = ")
     f = lambda x: eval(formula)
     xmin, xmax = eval(input("Interval of integration, (xmin, xmax) = "))
-    boolLogX = input("Logarithmic x scale for graphing f(x) ? [y/n]").lower() == 'y'
-    boolLogY = input("Logarithmic y scale for graphing f(x) ? [y/n]").lower() == 'y'
+    boolLogX = pyip.inputYesNo("Logarithmic x scale for graphing f(x) ? [y/n]", yesVal='y', noVal='n') == 'y'
+    boolLogY = pyip.inputYesNo("Logarithmic y scale for graphing f(x) ? [y/n]", yesVal='y', noVal='n') == 'y'
     list_n = list(map(int, input("what number of intervals would you like to study ? use comma separated values, "
-                                "like \"10, 100, 1000, 10000\", spaces don't matter: ").split(',')))
-    lenContinuous = 100000  # 100000 is very precise, but 10000 can be used fine, it only matters for zooming in a lot. It's only used for visualization.
+                                 "like \"10, 100, 1000, 10000\", spaces don't matter: ").split(',')))
+    lenContinuous = 1000000  # 1000000 is very precise but can take some time to compute, but 10000 can be used fine,
+    # it only matters for zooming in a lot. It's only used for visualization.
 
     dictMethod = {
         1: simpleRiemann,
         2: midpoint,
         3: trapezoidal
     }
-    method = dictMethod[int(input("What method would you like to use ? "
-                                  "1 for basic Riemann sums, 2 for midpoint sums, 3 for trapezoidal sums: "))]
+    fig = plt.gcf()
+    method = dictMethod[pyip.inputInt("What method would you like to use ? "
+                                      "1 for basic Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule: ", min=1, max=3)]
     method(fig, f, formula, xmin, xmax, boolLogX, boolLogY, list_n, lenContinuous)
 
     fig.subplots_adjust(left=0.05, bottom=0.05,right=0.95, top=0.9, wspace=0.1, hspace=0.6)
