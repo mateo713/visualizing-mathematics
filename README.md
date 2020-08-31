@@ -10,7 +10,7 @@ I have tried to make it comprehensive and detailed, so feel free to skim through
 You can freely download the code to run it on your computer (just check the dependencies at the beginning of the code).
 This program allows you to give a function on a certain interval, as well as other details if you want, you then choose different methods of approximations: Riemann sums, midpoint rule, trapezoidal rule, and more when I add them. It will then display a visualization/graph of how it approximates the area and a plot of the accuracy as the number of intervals increases.
 
-###HOW TO USE THE PROGRAM
+### HOW TO USE THE PROGRAM
 
 The code below is an example, feel free to skip the rest and come back to it only if you don't understand something.
 
@@ -70,7 +70,7 @@ You may use any syntax that evaluates to a python list, such exemples are:
 
 Finally, you will be asked for a number of points. This defaults to 10000 at lower control levels and is the number of points that should be used to plot f(x): matplotlib graphs it by computing a certain amount of points and joining them together with straight lines. This input determines the number of said points. Note that anything above 10000 is only useful for zooming in, as otherwise there are many points per pixel.
 
-###HOW TO UNDERSTAND THE OUTPUT
+### HOW TO UNDERSTAND THE OUTPUT
 
 For each method, a figure (window) is created, that contains 2 sorts of graphs:
 The first one is the graphs on the left half of the screen, one per number of intervals. Each of these shows the function, as well as how it (or its area) is approximated by the method used here. This allows for easy visualization of the efficiency of a method, as well as how it works internally.
@@ -83,7 +83,7 @@ negative values behave similarly, with -100 meaning an estimation of 0, -1000 an
 Another way of putting it is the percentage of over/under estimatition: +50 means 50% overestimate, 100 means double the estimate, -50 means a 50% underestimate. The extension of this concept for values under 100 does get weird, but that only reflects the estimation having the wrong sign.
 If you prefer a formula, let E designate the exact integral, and A be the approximation of E. Then the values displayed are computed with result = 100 * (A-E) / E.
 
-###KNOWN ISSUES
+### KNOWN ISSUES
 
 There is for now no way to deal with float overflows, which happens if |log10(value)|> 308.25. This should only cause problems with exponential and other fast growing functions. I may fix this at some point, but I haven't had the time to rewrite it all with the decimal module to fix this.
 
