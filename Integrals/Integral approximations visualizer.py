@@ -12,7 +12,7 @@ filterwarnings("ignore", category=__import__('matplotlib').cbook.mplDeprecation)
 
 
 #This function is unique because it's the only one to graph many things on each axis, thus it is separate in order to not make special cases in the rest of the code
-def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listComp_n, lenContinuous):
+def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listComp_n, lenContinuous, exact, errorBound):
     continuous_x = np.linspace(xmin, xmax, lenContinuous)
     continuous_y = f(continuous_x)
     interval = xmax - xmin
@@ -45,7 +45,7 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
                color=list("#6815a3" if y >= 0 else "#e08f0b" for y in listListGraph_yRight[i])) # purple and yellow
         ax.plot(continuous_x, continuous_y)
         if boolLogX:
-            ax.set_xscale('symlog', linthreshy=0.9 * min(abs(xmin), abs(xmax)))
+            ax.set_xscale('symlog', linthreshy=0.001)  #shouldn't be a problem, unless you're really picky about what to graph.
         if boolLogY:
             ax.set_yscale('symlog', linthreshy=absGetNonZeroMin(listListGraph_yLeft + listListComp_yLeft + listListGraph_yRight + listListComp_yRight))
         ax.set_title(f"{listGraph_n[i]} rectangles")
@@ -58,7 +58,6 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
                      for color1, color2 in zip(("#70db70", "#071ba3", "#6815a3"), ("#ff6666", "#d8e30e", "#e08f0b")))
     areaAxes[0].legend((legendpatches), ("Left sum", "Average of left and right sums", "Right sum"), handler_map={tuple: HandlerTuple(ndivide=None)}, fontsize=10)
 
-    exact, errorBound = quad(f, xmin, xmax)
     errorBounder = np.vectorize(lambda x: x if abs(x) > errorBound else 0)
     #the sorting here is to keep the implicit mapping between the lists of y values and the n values, which gets sorted later.
     listDistLeft = errorBounder(np.fromiter(((list_y.mean() * (interval) - exact) for list_y in sorted(listListGraph_yLeft + listListComp_yLeft, key=len)), dtype=float))
@@ -68,16 +67,15 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
     accuracyAxes = [fig.add_subplot(2, 2, i) for i in (2, 4)]
 
     if 0 in listDistLeft + listDistRight + listDistMid:
-        print(f"Some 0s are displayed in the accuracy check, however this does not mean necessarily mean the accuracy is perfect:\n"
-              f"the exact value is computed with a certain margin of error, here it is {niceStr(errorBound)}\n"
-              f"and any 0 displayed here means the inacurracy is less than this, and thus too small to be evaluated properly")
+        global exactMessage
+        exactMessage = True
     if exact == 0:
         titles = ("difference for each approximation compared to the exact value of the integral, 0",
                   "difference for each approximation compared to the exact value of the integral, 0, on a logarithmic scale")
     else:
-        listDistLeft, listDistMid, listDistRight = map(lambda x: x * (100 / exact), (listDistLeft, listDistMid, listDistRight))
-        titles = (f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}",
-                  f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
+        listDistLeft, listDistMid, listDistRight = map(lambda x: 100 * x / exact, (listDistLeft, listDistMid, listDistRight))
+        titles = (f"relative error for each approximation compared to the exact integral: {niceStr(exact)}",
+                  f"relative error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
 
     #sorted to avoid lines going back and forth because it wouldn't be monotonically increasing.
     listTot_n = list(sorted(listGraph_n + listComp_n))
@@ -98,7 +96,7 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
     ax.set_xscale("log")
     ax.get_xaxis().set_tick_params(which='minor', size=0)
     ax.get_xaxis().set_tick_params(which='minor', width=0)
-    ax.set_yscale("symlog", linthreshy=absGetNonZeroMin(listDistLeft + listDistMid + listDistRight) * 0.9)
+    ax.set_yscale("symlog", linthreshy=absGetNonZeroMin(np.concatenate((listDistLeft, listDistMid, listDistRight))) * 0.9)
     good_ylim(ax, np.concatenate((listDistLeft, listDistMid, listDistRight)))  # sets the y limits to something a bit cleaner
     for x, y in zip(listTot_n * 3, np.concatenate((listDistLeft, listDistMid, listDistRight))):
         ax.text(x, y, niceStr(y))
@@ -196,17 +194,8 @@ def raiseEx(text): #to raise exceptions in lambda functions
     raise Exception(text)
 
 def absGetNonZeroMin(values):  #returns the smallest non-zero value in the list, positive, used to set linthreshy on symlog scales, as it can't be 0
-    if any(isinstance(elem, list) or isinstance(elem, np.ndarray) for elem in values): #if it's nested
-        return absGetNonZeroMin(absGetNonZeroMin(arr) for arr in values)
-    values = [abs(val) for val in values]
-    if 0 not in values:
-        return min(values)
-    else:
-        maxi = max(values)
-        if maxi == 0:
-            return 1 #default
-        else:
-            return min(values, key=lambda x: x if x != 0 else maxi)
+    maxi = max(abs(val) for val in values)
+    return min(abs(val) if val else maxi for val in values) if any(x != 0 for x in values) else 1
 
 def main():
     print("If you want to stop the program (which is an infinite loop), enter 0 as a level of customization and the program will terminate")
@@ -223,7 +212,7 @@ def main():
                  "listComp_n": (3, '[]',  #the + sign on the next line is for proper string formatting: indented code without indented string.
                                 """input('''Enter anything that evaluates to a regular python list of integers, such as [10, 100, 1000] or [3**i for i in range(2, 10)],\n''' +
                                 '''these will be added to the computations to display more points in the accuracy graphs:\n''')"""),
-                 "lenContinuous": (3, '100000', """pyip.inputInt("How many values should be used to plot f(x) ? For graphing purposes only: ")""")}
+                 "lenContinuous": (3, '10000', """pyip.inputInt("How many values should be used to plot f(x) ? For graphing purposes only: ")""")}
 
         formula = input("f(x) = ")
         f = np.vectorize(lambda x: eval(formula))
@@ -231,7 +220,7 @@ def main():
         boolLogX = getvalue("boologX")
         boolLogY = getvalue("boologY")
         listGraph_n = looper(lambda: getvalue('listGraph_n'), lambda list_: True if isinstance(list_, list) and all(isinstance(x, int) for x in list_) else \
-                                                                             raiseEx("It should evaluate to a list of integers"))
+                                                                            raiseEx("It should evaluate to a list of integers"))
         listComp_n = [] if tier < 3 else looper(lambda : (eval(eval(tiers['listComp_n'][2]))),
                                                 lambda list_: True if isinstance(list_, list) and all(isinstance(x, int) and x >= 1 for x in list_) else \
                                                 raiseEx("It should evaluate to a list of integers all >= 1")) #the first eval gets the comprehension, the second eval computes it.
@@ -247,6 +236,7 @@ def main():
         }
         exact, errorBound = quad(f, xmin, xmax)
         errorBounder = np.vectorize(lambda x: x if abs(x) > errorBound else 0)
+        global exactMessage
         exactMessage = False
 
         numbers = looper(lambda: list(map(int, input("What methods would you like to use ? all methods called will be executed one after the other, the results will be displayed "
@@ -256,7 +246,7 @@ def main():
 
             fig = plt.figure()
             if number == 1: # this function is a unique case.
-                Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listComp_n, lenContinuous)
+                Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listComp_n, lenContinuous, exact, errorBound)
                 fig.subplots_adjust(left=0.05, bottom=0.05, right=0.95, top=0.9, wspace=0.1, hspace=0.6)
                 plt.draw()
                 continue
@@ -272,7 +262,7 @@ def main():
                 method.graph(ax, i)
                 ax.plot(continuous_x, continuous_y)
                 if boolLogX:
-                    ax.set_xscale('symlog', linthreshy=0.9 * min(abs(xmin), abs(xmax)))
+                    ax.set_xscale('symlog', linthreshy=0.001) #shouldn't be visible, unless you're really picky about your graphs.
                 if boolLogY:
                     ax.set_yscale('symlog', linthreshy=absGetNonZeroMin(method.listListGraph_y + method.listListComp_y))
                 ax.set_title(f"{listGraph_n[i]} intervals")
@@ -288,9 +278,9 @@ def main():
                 titles = ("difference for each approximation compared to the exact value of the integral, 0",
                           "difference for each approximation compared to the exact value of the integral, 0, on a logarithmic scale")
             else:
-                listDist = listDist * (100 / exact)
-                titles = (f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}",
-                          f"error percentage for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
+                listDist = listDist * 100 / exact
+                titles = (f"relative error for each approximation compared to the exact integral: {niceStr(exact)}",
+                          f"relative error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
 
             #sorted for nicer graph: prevents line going back and forth by making it monotically increasing. The same sorting order is applied in each method
             listTot_n = list(sorted(listGraph_n + listComp_n))
