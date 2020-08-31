@@ -1,18 +1,44 @@
 # visualizing-mathematics
 This is a personnal repository under the MIT license containing all my programs that are related to data visualization, in particular with matplotlib and visualizing mathematical formulas or concepts. 
 
-Each folder contains the program, a python file, as well as a text explaining how the program works, what it does, how it should be used and potential other details.
-
-Every program in this repository, that I plan on expanding, is to be used freely by people, mainly as a learning tool, either to learn a little more about python programming, or as a tool to visualize certain mathematical concepts.
-
+Every program (only one for now) in this repository that I plan on expanding, is to be used freely by people, mainly as a learning tool, either to learn a little more about python programming, or as a tool to visualize certain mathematical concepts.
 
 The 60 lines below explain the point of the first program, Integral approximations visualizer.py, and how to use it, in case this wasn't clear enough when running it.
 
 I have tried to make it comprehensive and detailed, so feel free to skim through it or not read it at all.
 
+You can freely download the code to run it on your computer (just check the dependencies at the beginning of the code).
 This program allows you to give a function on a certain interval, as well as other details if you want, you then choose different methods of approximations: Riemann sums, midpoint rule, trapezoidal rule, and more when I add them. It will then display a visualization/graph of how it approximates the area and a plot of the accuracy as the number of intervals increases.
 
-HOW TO USE THE PROGRAM
+###HOW TO USE THE PROGRAM
+
+The code below is an example, feel free to skip the rest and come back to it only if you don't understand something.
+
+```
+How much customization do you want ? 0: stop, 1: minimum, 2: average, 3: advanced : 3
+f(x) = x**4 - 3*x**3 - 12*x**2 + 20*x + 50*abs(sin(x/2))
+Interval of integration: xmin, xmax = -3.5, 4.5
+Logarithmic x scale for graphing f(x) ? [y/n]n
+Logarithmic y scale for graphing f(x) ? [y/n]n
+what number of intervals would you like to study ? use comma separated values, eg: 10, 100, 1000, 10000, spaces don't matter: 10, 100, 1000
+Enter anything that evaluates to a regular python list of integers, such as [10, 100, 1000] or [3**i for i in range(2, 10)],
+these will be added to the computations to display more points in the accuracy graphs:
+[5**i for i in range(1, 7)]
+How many values should be used to plot f(x) ? For graphing purposes only: 25000
+What methods would you like to use ? all methods called will be executed one after the other, the results will be displayed at the end.
+1 for Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule: 1, 2, 3
+How much customization do you want ? 0: stop, 1: minimum, 2: average, 3: advanced : 0
+
+Process finished with exit code 0
+```
+
+Shows, after some computing:
+
+![image 1](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_1.png)
+
+![image 2](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_2.png)
+
+![image 3](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_3.png)
 
 Disclaimer: What is written here may sound obvious, but I still want to make it clear, just in case.
 In order to perform some calculations, the code utilizes the eval function, which executes whatever code it is given. This allows the code to compute whatever function is given (or list comprehension for advanced customization), however it also means that you can execute any code with it, without any restriction: if you enter some code that deletes your file systems, the code will be executed. It is thus your responsability to not play with this in any other way than its intended use. Also note that there are no checks that are done regarding the memory consumption: if you enter values that make it require 60GB of RAM, it will try and access that much. So if you find the program long to perform and you have entered big numbers (usually in the millions, but it may happen in the 100000s), check your task manager (or whatever it is on your OS) and make sure this program isn't starting to use up several GB of RAM (1 or 2 is normal for medium sized numbers though). This can (and did) happen, and it is much better when it is prevented.
@@ -44,7 +70,7 @@ You may use any syntax that evaluates to a python list, such exemples are:
 
 Finally, you will be asked for a number of points. This defaults to 10000 at lower control levels and is the number of points that should be used to plot f(x): matplotlib graphs it by computing a certain amount of points and joining them together with straight lines. This input determines the number of said points. Note that anything above 10000 is only useful for zooming in, as otherwise there are many points per pixel.
 
-HOW TO UNDERSTAND THE OUTPUT
+###HOW TO UNDERSTAND THE OUTPUT
 
 For each method, a figure (window) is created, that contains 2 sorts of graphs:
 The first one is the graphs on the left half of the screen, one per number of intervals. Each of these shows the function, as well as how it (or its area) is approximated by the method used here. This allows for easy visualization of the efficiency of a method, as well as how it works internally.
@@ -57,7 +83,7 @@ negative values behave similarly, with -100 meaning an estimation of 0, -1000 an
 Another way of putting it is the percentage of over/under estimatition: +50 means 50% overestimate, 100 means double the estimate, -50 means a 50% underestimate. The extension of this concept for values under 100 does get weird, but that only reflects the estimation having the wrong sign.
 If you prefer a formula, let E designate the exact integral, and A be the approximation of E. Then the values displayed are computed with result = 100 * (A-E) / E.
 
-KNOWN ISSUES
+###KNOWN ISSUES
 
 There is for now no way to deal with float overflows, which happens if |log10(value)|> 308.25. This should only cause problems with exponential and other fast growing functions. I may fix this at some point, but I haven't had the time to rewrite it all with the decimal module to fix this.
 
