@@ -37,10 +37,10 @@ Note that big numbers take a long time to compute and use a lot of memory, as th
 Control level 3:
 You get to create a python list (a regular list, not a numpy array or anything else) that contains numbers of intervals (like the previous prompt) except these won't be displayed, they'll just be added to the computations in order to display more points and thus, more accurate graphs.
 You may use any syntax that evaluates to a python list, such exemples are:
-\[5, 50, 500, 5000]
-list(range(100, 10100, 100))
-\[5\*\*i for i in range(1, 8)]
-Note that these can greatly lengthen the computations and use up more memory (as is to be expected)
+\[5, 50, 500, 5000], 
+ list(range(100, 10100, 100)), 
+ \[5\*\*i for i in range(1, 8)], 
+ Note that these can greatly lengthen the computations and use up more memory (as is to be expected)
 
 Finally, you will be asked for a number of points. This defaults to 10000 at lower control levels and is the number of points that should be used to plot f(x): matplotlib graphs it by computing a certain amount of points and joining them together with straight lines. This input determines the number of said points. Note that anything above 10000 is only useful for zooming in, as otherwise there are many points per pixel.
 
