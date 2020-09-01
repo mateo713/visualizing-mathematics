@@ -2,14 +2,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import patches
 from matplotlib.legend_handler import HandlerTuple
-from scipy.integrate import quad
+from scipy.integrate import quad, simps
 from math import *  #lets the user enter complicated functions easily, eg: exp(3*sin(x**2))
 import pyinputplus as pyip # makes taking inputs more convenient for the user
 
-# prevents a warning for calling ax.set_yscale("symlog", linthresh=ACERTAINVALUE) with linthresh where it is.
 from warnings import filterwarnings
+# prevents a warning for calling ax.set_yscale("symlog", linthresh=ACERTAINVALUE) with linthresh where it is.
 filterwarnings("ignore", category=__import__('matplotlib').cbook.mplDeprecation)
-
+#can avoid having a whole bunch of message if the polynomial interpolation is bad while displaying Simpson's rule's parabolas.
+filterwarnings("ignore", category=np.RankWarning)
 
 #This function is unique because it's the only one to graph many things on each axis, thus it is separate in order to not make special cases in the rest of the code
 def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listComp_n, lenContinuous, exact, errorBound):
@@ -45,7 +46,7 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
                color=list("#6815a3" if y >= 0 else "#e08f0b" for y in listListGraph_yRight[i])) # purple and yellow
         ax.plot(continuous_x, continuous_y)
         if boolLogX:
-            ax.set_xscale('symlog', linthreshy=0.001)  #shouldn't be a problem, unless you're really picky about what to graph.
+            ax.set_xscale('symlog', linthreshy=interval / (10 * max(len(list_) for list_ in listListGraph_x + listListComp_xRight)))
         if boolLogY:
             ax.set_yscale('symlog', linthreshy=absGetNonZeroMin(listListGraph_yLeft + listListComp_yLeft + listListGraph_yRight + listListComp_yRight))
         ax.set_title(f"{listGraph_n[i]} rectangles")
@@ -74,8 +75,8 @@ def Riemann(fig, formula, f, xmin, xmax, boolLogX, boolLogY, listGraph_n, listCo
                   "difference for each approximation compared to the exact value of the integral, 0, on a logarithmic scale")
     else:
         listDistLeft, listDistMid, listDistRight = map(lambda x: 100 * x / exact, (listDistLeft, listDistMid, listDistRight))
-        titles = (f"relative error for each approximation compared to the exact integral: {niceStr(exact)}",
-                  f"relative error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
+        titles = (f"relative percentage error for each approximation compared to the exact integral: {niceStr(exact)}",
+                  f"relative percentage error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
 
     #sorted to avoid lines going back and forth because it wouldn't be monotonically increasing.
     listTot_n = list(sorted(listGraph_n + listComp_n))
@@ -110,12 +111,14 @@ class Midpoint:
     def __init__(self, f, xmin, xmax, listGraph_n, listComp_n):
         self.interval = xmax - xmin
         self.listListGraph_x = [np.linspace(xmin, xmax - self.interval / n, n) + self.interval / (2*n) for n in listGraph_n]
-        self.listListGraph_y = [np.fromiter((f(x) for x in list_x), dtype=float) for list_x in self.listListGraph_x]
+        self.listListGraph_y = [f(list_x) for list_x in self.listListGraph_x]
         self.listListComp_x = [np.linspace(xmin, xmax - self.interval / n, n) + self.interval / (2*n) for n in listComp_n]
-        self.listListComp_y = [np.fromiter((f(x) for x in list_x), dtype=float) for list_x in self.listListComp_x]
+        self.listListComp_y = [f(list_x) for list_x in self.listListComp_x]
         self.listWidth = [self.interval / n for n in listGraph_n]
 
     def titleSpecs(self): return "some midpoint sums"
+    def shapeName(self): return "rectangles"
+
     def listDist(self, exact):
         return np.fromiter(((list_y.mean() * (self.interval) - exact) for list_y in sorted(self.listListGraph_y + self.listListComp_y, key=len)), dtype=float)
 
@@ -128,13 +131,14 @@ class Trapezoidal:
 
     def __init__(self, f, xmin, xmax, listGraph_n, listComp_n):
         self.interval = xmax - xmin
-        self.listListGraph_x = [np.linspace(xmin, xmax, n + 1) for n in listGraph_n]
-        self.listListGraph_y = [np.fromiter((f(x) for x in list_x), dtype=float) for list_x in self.listListGraph_x]
-        self.listListComp_x = [np.linspace(xmin, xmax, n + 1) for n in listComp_n]
-        self.listListComp_y = [np.fromiter((f(x) for x in list_x), dtype=float) for list_x in self.listListComp_x]
-        self.listWidth = [self.interval / n for n in listGraph_n]
+        self.listListGraph_x = [np.linspace(xmin, xmax, n+1) for n in listGraph_n]
+        self.listListGraph_y = [f(list_x) for list_x in self.listListGraph_x]
+        self.listListComp_x = [np.linspace(xmin, xmax, n+1) for n in listComp_n]
+        self.listListComp_y = [f(list_x) for list_x in self.listListComp_x]
 
     def titleSpecs(self): return "some trapezoidal sums"
+    def shapeName(self): return "trapezia"
+
     def listDist(self, exact):
         return np.fromiter((((list_y.sum() - (list_y[0] + list_y[-1]) / 2) / (len(list_y) - 1) * (self.interval) - exact)
                             for list_y in sorted(self.listListGraph_y + self.listListComp_y, key=len)), dtype=float)
@@ -143,6 +147,44 @@ class Trapezoidal:
         ax.plot(self.listListGraph_x[i], self.listListGraph_y[i], color='#8b008b', linestyle='--')
         ax.fill_between(self.listListGraph_x[i], self.listListGraph_y[i], alpha=0.5, interpolate=True,
                         color=["#70db70" if y >= 0 else "#ff6666" for y in self.listListGraph_y[i]])
+
+
+class Simpson:
+
+    def __init__(self, f, xmin, xmax, listGraph_n, listComp_n): #the list_ns contain a number of parabolas.
+        self.interval = xmax - xmin
+        self.listListGraph_x = [np.linspace(xmin, xmax, 2*n + 1) for n in listGraph_n] # 2n + 1 sub-intervals
+        self.listListGraph_y = [f(list_x) for list_x in self.listListGraph_x]
+        self.listListComp_x = [np.linspace(xmin, xmax, 2*n + 1) for n in listComp_n]
+        self.listListComp_y = [f(list_x) for list_x in self.listListComp_x]
+
+    def titleSpecs(self): return "Simpson's rule"
+    def shapeName(self): return "parabolas"
+
+    def listDist(self, exact):
+        return np.fromiter(((simps(list_y, list_x) - exact) for list_x, list_y in
+                            zip(list(sorted(self.listListGraph_x + self.listListComp_x, key=len)),
+                                list(sorted(self.listListGraph_y + self.listListComp_y, key=len)))),
+                            dtype = float)
+
+    def graph(self, ax, i):
+        """
+        separate it into n intervals, find the fitting parabola on each of them, grab the corresponding x values from continuous_x,
+        use them to get y values with the polynomial, plot them.
+        """
+        global continuous_x
+        listData_x = self.listListGraph_x[i]
+        listData_y = self.listListGraph_y[i]
+        n = (len(listData_x) - 1) // 2 # number of parabolas
+        toPlot_y = []
+        for i_inter in range(n):
+            x_data = listData_x[2*i_inter:2*i_inter+3]
+            y_data = listData_y[2*i_inter:2*i_inter+3]
+            poly = np.polyfit(x_data, y_data, 2)
+            list_x = continuous_x[len(continuous_x) * i_inter // n: len(continuous_x) * (i_inter+1) // n]
+            list_y = np.polyval(poly, list_x)
+            toPlot_y.extend(list_y)
+        ax.plot(continuous_x, toPlot_y, color='#8b008b', linestyle='--')
 
 def firstDigit(num):
     digits = '123456789'
@@ -193,9 +235,8 @@ def getvalue(variable):  #input taker
 def raiseEx(text): #to raise exceptions in lambda functions
     raise Exception(text)
 
-def absGetNonZeroMin(values):  #returns the smallest non-zero value in the list, positive, used to set linthreshy on symlog scales, as it can't be 0
-    maxi = max(abs(val) for val in values)
-    return min(abs(val) if val else maxi for val in values) if any(x != 0 for x in values) else 1
+def absGetNonZeroMin(values):  #returns the smallest positive non-zero value in the list, positive, used to set linthreshy on symlog scales, as it can't be 0
+    return min(abs(val) for val in values if val) if any(values) else 1
 
 def main():
     print("If you want to stop the program (which is an infinite loop), enter 0 as a level of customization and the program will terminate")
@@ -207,7 +248,7 @@ def main():
         #concept: the first value is the default value, the second value is what is executed (with getvalue) to get the value.
         tiers = {"boologX": (2, 'False', """pyip.inputYesNo("Logarithmic x scale for graphing f(x) ? [y/n]", yesVal='y', noVal='n') == 'y'"""),
                  "boologY": (2, 'False', """pyip.inputYesNo("Logarithmic y scale for graphing f(x) ? [y/n]", yesVal='y', noVal='n') == 'y'"""),
-                 "listGraph_n": (2, '[10, 100, 1000]', """list(map(int, input("what number of intervals would you like to study ? use comma separated values, "
+                 "listGraph_n": (2, '[10, 100, 1000]', """list(map(int, input("what number of intervals/shapes would you like to study ? use comma separated values, "
                                                             "eg: 10, 100, 1000, 10000, spaces don't matter: ").split(',')))"""),
                  "listComp_n": (3, '[]',  #the + sign on the next line is for proper string formatting: indented code without indented string.
                                 """input('''Enter anything that evaluates to a regular python list of integers, such as [10, 100, 1000] or [3**i for i in range(2, 10)],\n''' +
@@ -225,6 +266,7 @@ def main():
                                                 lambda list_: True if isinstance(list_, list) and all(isinstance(x, int) and x >= 1 for x in list_) else \
                                                 raiseEx("It should evaluate to a list of integers all >= 1")) #the first eval gets the comprehension, the second eval computes it.
         #these 3 are used to graph the function.
+        global continuous_x #can be accessed by methods that need it, like simpson's rule
         lenContinuous = getvalue("lenContinuous")
         continuous_x = np.linspace(xmin, xmax, lenContinuous)
         continuous_y = f(continuous_x)
@@ -232,7 +274,8 @@ def main():
         dictMethod = {
             1: Riemann,
             2: Midpoint,
-            3: Trapezoidal
+            3: Trapezoidal,
+            4: Simpson,
         }
         exact, errorBound = quad(f, xmin, xmax)
         errorBounder = np.vectorize(lambda x: x if abs(x) > errorBound else 0)
@@ -240,8 +283,11 @@ def main():
         exactMessage = False
 
         numbers = looper(lambda: list(map(int, input("What methods would you like to use ? all methods called will be executed one after the other, the results will be displayed "
-                                                    "at the end." + '\n' + "1 for Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule: ").split(','))),
-                         lambda values: True if all(isinstance(val, int) and 1 <= val <= 3 for val in values) else raiseEx("These should all be integers between 1 and 3"))
+                                                    "at the end." + '\n' +
+                                                     "1 for Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule, 4 for Simpson's rule: ")
+                                                .split(','))),
+                         lambda values: True if all(isinstance(val, int) and 1 <= val <= 4 for val in values) else raiseEx("These should all be integers between 1 and 4"))
+
         for number in numbers:
 
             fig = plt.figure()
@@ -262,10 +308,11 @@ def main():
                 method.graph(ax, i)
                 ax.plot(continuous_x, continuous_y)
                 if boolLogX:
-                    ax.set_xscale('symlog', linthreshy=0.001) #shouldn't be visible, unless you're really picky about your graphs.
+                    ax.set_xscale('symlog', linthreshy=(xmax - xmin) / 10 * max(len(list_) for list_ in listGraph_n + listComp_n)) #shouldn't be visible, unless you're really
+                    # picky about your graphs.
                 if boolLogY:
                     ax.set_yscale('symlog', linthreshy=absGetNonZeroMin(method.listListGraph_y + method.listListComp_y))
-                ax.set_title(f"{listGraph_n[i]} intervals")
+                ax.set_title(f"{listGraph_n[i]} {method.shapeName()}")
                 ax.grid(True)
 
             listDist = method.listDist(exact)
@@ -279,8 +326,8 @@ def main():
                           "difference for each approximation compared to the exact value of the integral, 0, on a logarithmic scale")
             else:
                 listDist = listDist * 100 / exact
-                titles = (f"relative error for each approximation compared to the exact integral: {niceStr(exact)}",
-                          f"relative error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
+                titles = (f"relative percentage error for each approximation compared to the exact integral: {niceStr(exact)}",
+                          f"relative percentage error for each approximation compared to the exact integral: {niceStr(exact)}, on a logarithmic scale")
 
             #sorted for nicer graph: prevents line going back and forth by making it monotically increasing. The same sorting order is applied in each method
             listTot_n = list(sorted(listGraph_n + listComp_n))
