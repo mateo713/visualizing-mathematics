@@ -15,18 +15,22 @@ This program allows you to give a function on a certain interval, as well as oth
 The code below is an example, feel free to skip the rest and come back to it only if you don't understand something.
 
 ```
+If you want to stop the program (which is an infinite loop), enter 0 as a level of customization and the program will terminate
 How much customization do you want ? 0: stop, 1: minimum, 2: average, 3: advanced : 3
 f(x) = x**4 - 3*x**3 - 12*x**2 + 20*x + 50*abs(sin(x/2))
-Interval of integration: xmin, xmax = -3.5, 4.5
+Interval of integration: xmin, xmax = -3.3, 4.7
 Logarithmic x scale for graphing f(x) ? [y/n]n
 Logarithmic y scale for graphing f(x) ? [y/n]n
-what number of intervals would you like to study ? use comma separated values, eg: 10, 100, 1000, 10000, spaces don't matter: 10, 100, 1000
+what number of intervals/shapes would you like to study ? use comma separated values, eg: 10, 100, 1000, 10000, spaces don't matter: 10, 100, 1000
 Enter anything that evaluates to a regular python list of integers, such as [10, 100, 1000] or [3**i for i in range(2, 10)],
 these will be added to the computations to display more points in the accuracy graphs:
 [5**i for i in range(1, 7)]
 How many values should be used to plot f(x) ? For graphing purposes only: 25000
 What methods would you like to use ? all methods called will be executed one after the other, the results will be displayed at the end.
-1 for Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule: 1, 2, 3
+1 for Riemann sums, 2 for midpoint rule, 3 for trapezoidal rule, 4 for Simpson's rule: 1, 2, 3, 4
+Some 0s are displayed in the accuracy check, however this does not mean necessarily mean the accuracy is perfect:
+the exact value is computed with a certain margin of error, here it is 8.56478e-08
+and any 0 displayed here means the inacurracy is less than this, and thus too small to be evaluated properly
 How much customization do you want ? 0: stop, 1: minimum, 2: average, 3: advanced : 0
 
 Process finished with exit code 0
@@ -39,6 +43,8 @@ Shows, after some computing:
 ![image 2](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_2.png)
 
 ![image 3](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_3.png)
+
+![image 4](https://github.com/mateo713/visualizing-mathematics/blob/master/images/display_image_4.png)
 
 Disclaimer: What is written here may sound obvious, but I still want to make it clear, just in case.
 In order to perform some calculations, the code utilizes the eval function, which executes whatever code it is given. This allows the code to compute whatever function is given (or list comprehension for advanced customization), however it also means that you can execute any code with it, without any restriction: if you enter some code that deletes your file systems, the code will be executed. It is thus your responsability to not play with this in any other way than its intended use. Also note that there are no checks that are done regarding the memory consumption: if you enter values that make it require 60GB of RAM, it will try and access that much. So if you find the program long to perform and you have entered big numbers (usually in the millions, but it may happen in the 100000s), check your task manager (or whatever it is on your OS) and make sure this program isn't starting to use up several GB of RAM (1 or 2 is normal for medium sized numbers though). This can (and did) happen, and it is much better when it is prevented.
