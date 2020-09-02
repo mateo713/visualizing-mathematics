@@ -8,7 +8,7 @@ The 60 lines below explain the point of the first program, Integral approximatio
 I have tried to make it comprehensive and detailed, so feel free to skim through it or not read it at all.
 
 You can freely download the code to run it on your computer (just check the dependencies at the beginning of the code).
-This program allows you to give a function on a certain interval, as well as other details if you want, you then choose different methods of approximations: Riemann sums, midpoint rule, trapezoidal rule, and more when I add them. It will then display a visualization/graph of how it approximates the area and a plot of the accuracy as the number of intervals increases.
+This program allows you to give a function on a certain interval, as well as other details if you want, you then choose different methods of approximations: Riemann sums, midpoint rule, trapezoidal rule, Simpson's rule, and more when I add them. It will then display a visualization/graph of how it approximates the area and a plot of the accuracy as the number of intervals increases.
 
 ### HOW TO USE THE PROGRAM
 
